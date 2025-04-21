@@ -15,8 +15,7 @@ public class Consumer {
 
     @KafkaHandler
     public void listenNewEmployee(ProductEvent productEvent) {
-        LOGGER.info("Received event:{}", productEvent);
-        System.out.println(productEvent);
+        LOGGER.info("Received event: {}", productEvent);
     }
 
 }

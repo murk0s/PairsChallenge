@@ -1,9 +1,10 @@
 package sia.pairschallenge.event;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-public class ProductEvent {
+public class ProductEvent implements Serializable {
 
     String message;
 
@@ -31,6 +32,8 @@ public class ProductEvent {
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
+
+    public ProductEvent() {}
 
 
     public String getMessage() {
@@ -63,5 +66,19 @@ public class ProductEvent {
 
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
+    }
+
+    @Override
+    public String toString() {
+        return "ProductEvent{" +
+                "message='" + message + '\'' +
+                ", id=" + id +
+                ", name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                ", price=" + price +
+                ", quantity=" + quantity +
+                ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
+                '}';
     }
 }
