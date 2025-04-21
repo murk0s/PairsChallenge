@@ -1,5 +1,6 @@
 package sia.pairschallenge.service.impl;
 
+import jakarta.persistence.EntityNotFoundException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,25 +31,48 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public void update(Product product) {
-        productRepository.save(product);
+    public void update(Long id, Product product) {
+        Product existingProduct = productRepository
+                .findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Product with id "+id+" not found"));
+        existingProduct.setName(product.getName());
+        existingProduct.setDescription(product.getDescription());
+        existingProduct.setPrice(product.getPrice());
+        existingProduct.setQuantity(product.getQuantity());
+        productRepository.save(existingProduct);
+        sendMessage(product, "product updated");
     }
 
     @Override
-    public Product findById(Integer id) {
-        return productRepository.findById(id).orElse(null);
+    public Product findById(Long id) {
+        return productRepository
+                .findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Product with id "+id+" not found"));
     }
 
     @Override
-    public void deleteById(Integer id) {
+    public void deleteById(Long id) {
+        Product productForDelete = productRepository
+                .findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Product with id "+id+" not found"));
         productRepository.deleteById(id);
+        sendMessage(productForDelete, "product deleted");
     }
 
     @Override
     public void create(Product product) {
         productRepository.save(product);
+        sendMessage(product, "new product created");
+    }
+
+    @Override
+    public List<Product> findAll() {
+        return productRepository.findAll();
+    }
+
+    private void sendMessage(Product product, String message) {
         CompletableFuture<SendResult<String, ProductEvent>> send = kafkaTemplate.send("product-events",
-                new ProductEvent("product created",
+                new ProductEvent(message,
                         product.getId(),
                         product.getName(),
                         product.getDescription(),
@@ -61,10 +85,5 @@ public class ProductServiceImpl implements ProductService {
                 log.error("message failed to send", exception);
             }
         });
-    }
-
-    @Override
-    public List<Product> findAll() {
-        return productRepository.findAll();
     }
 }
