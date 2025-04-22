@@ -1,12 +1,18 @@
 package sia.pairschallenge.service.impl;
 
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.PersistenceContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import sia.pairschallenge.event.ProductEvent;
 import sia.pairschallenge.repository.Product;
 import sia.pairschallenge.repository.ProductRepository;
@@ -24,14 +30,20 @@ public class ProductServiceImpl implements ProductService {
 
     private final KafkaTemplate<String, ProductEvent> kafkaTemplate;
 
+    @PersistenceContext
+    private final EntityManager entityManager;
+
     @Autowired
-    public ProductServiceImpl(ProductRepository productRepository, KafkaTemplate<String, ProductEvent> kafkaTemplate) {
+    public ProductServiceImpl(ProductRepository productRepository, KafkaTemplate<String, ProductEvent> kafkaTemplate, EntityManager entityManager) {
         this.productRepository = productRepository;
         this.kafkaTemplate = kafkaTemplate;
+        this.entityManager = entityManager;
     }
 
     @Override
-    public void update(Long id, Product product) {
+    @Transactional
+    @CachePut(value = "products", key = "#result.id")
+    public Product update(Long id, Product product) {
         Product existingProduct = productRepository
                 .findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Product with id "+id+" not found"));
@@ -39,11 +51,14 @@ public class ProductServiceImpl implements ProductService {
         existingProduct.setDescription(product.getDescription());
         existingProduct.setPrice(product.getPrice());
         existingProduct.setQuantity(product.getQuantity());
-        productRepository.save(existingProduct);
-        sendMessage(product, "product updated");
+        existingProduct = productRepository.save(existingProduct);
+        entityManager.flush();
+        sendMessage(existingProduct, "product updated");
+        return existingProduct;
     }
 
     @Override
+    @Cacheable(value = "products", key = "#id")
     public Product findById(Long id) {
         return productRepository
                 .findById(id)
@@ -51,6 +66,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @CacheEvict(value = "products", key = "#id")
     public void deleteById(Long id) {
         Product productForDelete = productRepository
                 .findById(id)
@@ -60,9 +76,11 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public void create(Product product) {
-        productRepository.save(product);
+    @CachePut(value = "products", key = "#result.id")
+    public Product create(Product product) {
+        product = productRepository.save(product);
         sendMessage(product, "new product created");
+        return product;
     }
 
     @Override

@@ -28,8 +28,8 @@ public class MainController {
 
     @PostMapping
     public ResponseEntity<String> createNewProduct(@RequestBody Product product) {
-        productService.create(product);
-        return ResponseEntity.ok("new product created");
+        Product newProduct = productService.create(product);
+        return ResponseEntity.ok("new product created, id: " + newProduct.getId());
     }
 
     @GetMapping("/{id}")
