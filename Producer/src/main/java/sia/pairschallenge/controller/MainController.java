@@ -1,14 +1,12 @@
 package sia.pairschallenge.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.apache.logging.log4j.LogManager;
 
 import org.apache.logging.log4j.Logger;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-//import sia.pairschallenge.redis.RedisRepository;
 import sia.pairschallenge.repository.Product;
 import sia.pairschallenge.service.impl.ProductServiceImpl;
 
@@ -39,14 +37,11 @@ public class MainController {
     }
 
     @GetMapping
-    public void getProducts() {
-        String message = "";
-        try {
-            List<Product> allProducts = productService.findAll();
-            message = new ObjectMapper().writeValueAsString(allProducts);
-        } catch (JsonProcessingException e) {
-            log.error("Unable to cast object to json" + e);
-        }
+    public ResponseEntity<List<Product>> getProducts(
+            @RequestParam(defaultValue = "0") Integer page,
+            @RequestParam(defaultValue = "10") Integer size) {
+        Page<Product> allProducts = productService.findAll(PageRequest.of(page, size));
+        return ResponseEntity.ok(allProducts.getContent());
     }
 
     @PutMapping("/{id}")

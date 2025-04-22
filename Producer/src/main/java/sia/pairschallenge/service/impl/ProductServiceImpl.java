@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
@@ -18,7 +20,6 @@ import sia.pairschallenge.repository.Product;
 import sia.pairschallenge.repository.ProductRepository;
 import sia.pairschallenge.service.ProductService;
 
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @Service
@@ -84,8 +85,8 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public List<Product> findAll() {
-        return productRepository.findAll();
+    public Page<Product> findAll(Pageable pageable) {
+        return productRepository.findAll(pageable);
     }
 
     private void sendMessage(Product product, String message) {

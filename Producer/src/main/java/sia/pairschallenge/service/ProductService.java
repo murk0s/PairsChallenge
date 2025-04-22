@@ -1,8 +1,8 @@
 package sia.pairschallenge.service;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import sia.pairschallenge.repository.Product;
-
-import java.util.List;
 
 public interface ProductService{
 
@@ -14,6 +14,6 @@ public interface ProductService{
 
     Product create(Product product);
 
-    List<Product> findAll();
+    Page<Product> findAll(Pageable pageable);
 
 }
